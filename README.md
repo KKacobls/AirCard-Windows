@@ -8,115 +8,126 @@
 
 # 中文說明
 
-## 🚀 新手快速開始
+## 🚀 懶人版：一行完成安裝 + 自動檢查
 
-如果你只是想直接使用 AirCard，不需要先學 Rust，也不需要自己編譯。
+一般使用者**不用安裝 Rust、Git 或自己編譯**。
 
-照下面做即可：
+### Step 1 — 以系統管理員開啟 PowerShell
 
-1. 安裝 Apple 官方 Windows 版 iTunes / Apple Mobile Device Support。
-2. 用 PowerShell 跑完 **3 個 DLL 檢查**，三個都必須是 `True`。
-3. USB 連接 iPhone、解鎖並按下「信任」。
-4. 從 GitHub Releases 下載 `aircard.exe`。
-5. 開啟 AirCard，掃描 Wallet 卡片後即可更換卡面。
-
----
-
-## 1. 安裝 Apple USB 驅動
-
-AirCard 需要 Apple Mobile Device Support 才能與 iPhone 通訊。
-
-### 最簡單安裝方式
-
-在 Windows：
+Windows：
 
 **開始 → 搜尋 PowerShell → 右鍵 → 以系統管理員身分執行**
 
-貼上這一整行：
+### Step 2 — 只貼這一行
 
 ```powershell
-$p="$env:TEMP\iTunes64Setup.exe"; Invoke-WebRequest "https://www.apple.com/itunes/download/win64" -OutFile $p; Start-Process $p -Verb RunAs -Wait
+irm https://raw.githubusercontent.com/KKacobls/AirCard-Windows/main/scripts/install-apple-support.ps1 | iex
 ```
 
-這個指令會：
+這一行會自動：
 
-1. 從 Apple 官方網址下載 Windows 64-bit iTunes 安裝程式。
-2. 儲存為 `%TEMP%\iTunes64Setup.exe`。
-3. 以系統管理員權限啟動安裝程式。
-4. 等待安裝完成。
+1. 檢查 Apple Mobile Device Support 是否已經存在。
+2. 檢查 AirCard 必要的 3 個 DLL。
+3. 如果缺少元件，自動從 Apple 官方下載 64-bit iTunes。
+4. 開啟 Apple 官方安裝程式。
+5. 等你安裝完成後，再自動檢查一次。
+6. 用 `[PASS]`、`[FAIL]`、`[READY]` 顯示結果。
 
-下載來源：
+> 腳本來源就在本 Repo 的 [`scripts/install-apple-support.ps1`](scripts/install-apple-support.ps1)，可以先打開查看內容再執行。
+
+### Step 3 — 看最後的結果
+
+成功時會看到類似：
+
+```text
+[PASS] CoreFoundation.dll
+[PASS] MobileDevice.dll
+[PASS] AirTrafficHost.dll
+
+READY / 安裝檢查完成
+```
+
+**三個 DLL 都必須是 `PASS` 才算完成。**
+
+如果出現：
+
+```text
+[FAIL] CoreFoundation.dll
+[FAIL] MobileDevice.dll
+[FAIL] AirTrafficHost.dll
+```
+
+或最後顯示：
+
+```text
+NOT READY / 尚未完成
+```
+
+請先重新啟動 Windows，再用系統管理員 PowerShell 執行同一行指令一次。
+
+### Step 4 — 下載 AirCard
+
+到：
+
+**https://github.com/KKacobls/AirCard-Windows/releases/latest**
+
+下載：
+
+```text
+aircard.exe
+```
+
+然後 USB 連接 iPhone、解鎖、按下「信任」，再開啟 `aircard.exe`。
+
+---
+
+## 1. 這個一鍵腳本實際檢查什麼？
+
+AirCard 會使用 Apple Mobile Device Support。腳本會自動尋找：
+
+```text
+C:\Program Files\Common Files\Apple\Mobile Device Support
+```
+
+以及相容的 x86 安裝位置，並檢查：
+
+```text
+CoreFoundation.dll
+MobileDevice.dll
+AirTrafficHost.dll
+```
+
+三個都存在才會顯示 `READY`。
+
+---
+
+## 2. 不想執行遠端腳本？
+
+你也可以手動從 Apple 官方下載：
 
 ```text
 https://www.apple.com/itunes/download/win64
 ```
 
-> 建議使用 Apple 官網提供的 Windows 安裝程式，不要只依賴 Microsoft Store 版本。
-
-安裝時保持預設選項即可。  
-AirCard 真正需要的是 iTunes 一起安裝的 **Apple Mobile Device Support**。
-
----
-
-## 2. 安裝完成後，必須跑完這 3 個 PowerShell 檢查
-
-**三個都顯示 `True` 才代表 AirCard 所需的 Apple DLL 已經準備完成。**
-
-### 檢查 1：CoreFoundation.dll
+完成安裝後，分別執行：
 
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\CoreFoundation.dll"
 ```
 
-正常結果：
-
-```text
-True
-```
-
-### 檢查 2：MobileDevice.dll
-
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\MobileDevice.dll"
 ```
-
-正常結果：
-
-```text
-True
-```
-
-### 檢查 3：AirTrafficHost.dll
 
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\AirTrafficHost.dll"
 ```
 
-正常結果：
+三個都應該輸出：
 
 ```text
 True
 ```
-
-### 三個都必須成功
-
-你最後應該確認：
-
-```text
-CoreFoundation.dll = True
-MobileDevice.dll    = True
-AirTrafficHost.dll  = True
-```
-
-如果其中任何一個是 `False`，先不要開 AirCard。
-
-重新執行 iTunes 安裝：
-
-```powershell
-$p="$env:TEMP\iTunes64Setup.exe"; Invoke-WebRequest "https://www.apple.com/itunes/download/win64" -OutFile $p; Start-Process $p -Verb RunAs -Wait
-```
-
-完成後重新啟動 Windows，再跑上面三個檢查。
 
 ---
 
@@ -483,7 +494,6 @@ Card Designer functionality is inspired by / derived from the MIT-licensed:
 
 - **KKacobls** — Community Edition integration, i18n, Card Designer integration, recovery tools and additional Windows UX
 
-> 發布到 GitHub 前，請把 `KKacobls` 改成你的 GitHub 使用者名稱。
 
 ---
 
@@ -503,110 +513,112 @@ AirCard-Windows 使用 **MIT License**。
 
 # English Documentation
 
-## 🚀 Quick Start
+## 🚀 One-line setup: install + verify automatically
 
-You do not need Rust or source-code knowledge to use AirCard.
+Normal users **do not need Rust, Git, or a local build environment**.
 
-Follow these steps:
+### Step 1 — Open PowerShell as Administrator
 
-1. Install Apple's Windows iTunes / Apple Mobile Device Support.
-2. Run the **three PowerShell DLL checks** below. All three must return `True`.
-3. Connect and unlock your iPhone, then tap **Trust**.
-4. Download `aircard.exe` from GitHub Releases.
-5. Start AirCard and scan the Wallet card you want to customize.
+Windows:
 
----
+**Start → search PowerShell → right-click → Run as administrator**
 
-## 1. Install Apple USB Support
+### Step 2 — Paste this single line
 
-AirCard requires Apple Mobile Device Support to communicate with the iPhone.
+```powershell
+irm https://raw.githubusercontent.com/KKacobls/AirCard-Windows/main/scripts/install-apple-support.ps1 | iex
+```
+
+The script automatically:
+
+1. Checks whether Apple Mobile Device Support is already installed.
+2. Checks the three DLL files required by AirCard.
+3. Downloads the official Apple 64-bit iTunes installer when required.
+4. Starts the installer.
+5. Checks the required files again after installation.
+6. Prints `[PASS]`, `[FAIL]`, and `[READY]` status messages.
+
+> The script is stored in this repository at [`scripts/install-apple-support.ps1`](scripts/install-apple-support.ps1), so you can inspect it before running the one-line command.
+
+### Step 3 — Check the final result
+
+A successful setup looks like:
+
+```text
+[PASS] CoreFoundation.dll
+[PASS] MobileDevice.dll
+[PASS] AirTrafficHost.dll
+
+READY / 安裝檢查完成
+```
+
+All three DLL checks must pass.
+
+If the script prints `[FAIL]` or ends with:
+
+```text
+NOT READY / 尚未完成
+```
+
+restart Windows and run the same one-line command again from an Administrator PowerShell.
+
+### Step 4 — Download AirCard
 
 Open:
 
-**Start → PowerShell → Run as administrator**
+**https://github.com/KKacobls/AirCard-Windows/releases/latest**
 
-Paste this single command:
+Download:
 
-```powershell
-$p="$env:TEMP\iTunes64Setup.exe"; Invoke-WebRequest "https://www.apple.com/itunes/download/win64" -OutFile $p; Start-Process $p -Verb RunAs -Wait
+```text
+aircard.exe
 ```
 
-This command:
+Connect the iPhone over USB, unlock it, tap **Trust**, then start `aircard.exe`.
 
-1. Downloads the official 64-bit Windows iTunes installer from Apple.
-2. Saves it as `%TEMP%\iTunes64Setup.exe`.
-3. Starts the installer with administrator privileges.
-4. Waits for installation to finish.
+---
 
-Official download redirect:
+## 1. What does the one-click script check?
+
+AirCard uses Apple Mobile Device Support. The script searches the normal Apple support locations and verifies:
+
+```text
+CoreFoundation.dll
+MobileDevice.dll
+AirTrafficHost.dll
+```
+
+All three must exist before the script reports `READY`.
+
+---
+
+## 2. Prefer manual installation?
+
+Download the official Apple installer from:
 
 ```text
 https://www.apple.com/itunes/download/win64
 ```
 
-> The Apple website installer is recommended. Do not rely only on the Microsoft Store version.
-
-Keep the default installation options.
-
-AirCard specifically needs **Apple Mobile Device Support**, which is installed with iTunes.
-
----
-
-## 2. Run all three PowerShell checks
-
-**Do not consider the Apple runtime ready until all three commands return `True`.**
-
-### Check 1 — CoreFoundation.dll
+After installation, run:
 
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\CoreFoundation.dll"
 ```
 
-Expected:
-
-```text
-True
-```
-
-### Check 2 — MobileDevice.dll
-
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\MobileDevice.dll"
 ```
-
-Expected:
-
-```text
-True
-```
-
-### Check 3 — AirTrafficHost.dll
 
 ```powershell
 Test-Path "C:\Program Files\Common Files\Apple\Mobile Device Support\AirTrafficHost.dll"
 ```
 
-Expected:
+All three commands should return:
 
 ```text
 True
 ```
-
-You should have:
-
-```text
-CoreFoundation.dll = True
-MobileDevice.dll    = True
-AirTrafficHost.dll  = True
-```
-
-If any result is `False`, reinstall iTunes:
-
-```powershell
-$p="$env:TEMP\iTunes64Setup.exe"; Invoke-WebRequest "https://www.apple.com/itunes/download/win64" -OutFile $p; Start-Process $p -Verb RunAs -Wait
-```
-
-Then restart Windows and run all three checks again.
 
 ---
 
@@ -972,7 +984,6 @@ Card Designer functionality is inspired by / derived from the MIT-licensed:
 
 - **KKacobls** — Community Edition integration, i18n, Card Designer integration, recovery tools and additional Windows UX
 
-> Before publishing, replace `KKacobls` with your GitHub username.
 
 ---
 
@@ -987,4 +998,3 @@ When modifying or redistributing the project:
 - Preserve applicable third-party MIT notices.
 - Keep `THIRD_PARTY_NOTICES.md`.
 - Do not present the upstream authors' work as if it were developed from scratch by the Community Edition maintainer.
-
